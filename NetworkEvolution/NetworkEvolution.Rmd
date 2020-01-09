@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Influencing Factors on Social Network Evolution"
 author-inputfile: "anonauthors.tex" 
 abstract: |
   The abstract should briefly summarize the contents of the paper in 150--250 words.
@@ -44,6 +44,15 @@ library(cowplot)
 pkgs <- c("knitr", "tidyverse", "rmdformats", "kableExtra", "scales", "psych", "rmdtemplates")
 rmdtemplates::write_bib(pkgs)
 ```
+
+
+# Introduction
+In the past decade the evolution of the internet and social media platforms rised new forms of social networks that changed our interpersonal communication and the methods of information procurement considerably. It has become very easy to connect to existing friends online, look for new friends and exchange information with them. As the formation of an individual's opinion is based on all available resources it is important to understand how the information received in online social networks is embedded and how people behave in such networks. 
+
+# Theory
+Existing research states that the vast availability of similar-minded people in online social networks leads us to enclose ourselves in so-called echo chambers and to disconnect from people who are too different from us. This leads us to reinforce our opinion solely through 
+
+We wanted to simulate such behavior in an agent-based model to be able to understand the crucial factors in the dynamics of online social networks.
 
 
 # First Section
