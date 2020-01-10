@@ -1,9 +1,9 @@
 
 function cfg_net(
     ;
-    agent_count::Int64=1000,
+    agent_count::Int64=10000,
     m0::Int64=100,
-    new_follows::Int64=4
+    new_follows::Int64=10
 )
     return (
         agent_count=agent_count,
@@ -15,39 +15,39 @@ end
 function cfg_sim(
     ;
     ticks::Int64=100,
-    addinput::String=""
+    addfriends::String=""
     )
 
     return(
         ticks=ticks,
-        addinput=addinput
+        addfriends=addfriends
     )
 end
 
 function cfg_ot(
     ;
     backfire::Float64=0.4,
-    follow::Float64=0.2,
-    unfollow::Float64=0.5
+    befriend::Float64=0.2,
+    unfriend::Float64=0.5
 )
     return (
         backfire=backfire,
-        follow=follow,
-        unfollow=unfollow
+        befriend=unfriend,
+        unfriend=unfriend
     )
 end
 
 function cfg_ag(
     ;
     own_opinion_weight::Float64=0.95,
-    unfollow_rate::Float64=0.05,
-    min_input_count::Int64=5
+    unfriend_rate::Float64=0.05,
+    min_friends_count::Int64=5
     )
 
     return (
         own_opinion_weight=own_opinion_weight,
-        unfollow_rate=unfollow_rate,
-        min_input_count=min_input_count
+        unfriend_rate=unfriend_rate,
+        min_friends_count=min_friends_count
     )
 end
 
@@ -57,15 +57,15 @@ struct Config
         NTuple{3,Int64}
     }
     simulation::NamedTuple{
-    (:ticks, :addinput),
+    (:ticks, :addfriends),
     <:Tuple{Int64, String}
     }
     opinion_threshs::NamedTuple{
-        (:backfire, :follow, :unfollow),
+        (:backfire, :befriend, :unfriend),
         NTuple{3,Float64}
     }
     agent_props::NamedTuple{
-    (:own_opinion_weight, :unfollow_rate, :min_input_count),
+    (:own_opinion_weight, :unfriend_rate, :min_friends_count),
     <:Tuple{Float64, Float64, Int64}
     }
 

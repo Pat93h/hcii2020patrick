@@ -4,3 +4,6 @@
 .Ruserdata
 *.pdf
 *.jld2
+*.gml
+*.csv
+*.png

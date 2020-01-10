@@ -5,7 +5,8 @@ using Statistics
 using JLD
 using JLD2
 using StatsBase
-
+using CSV
+using GraphIO
 
 for script in readdir("src")
     if script != "simulation.jl"
@@ -26,18 +27,29 @@ function tick!(
             update_perceiv_publ_opinion!(state, agent_idx)
             update_opinion!(state, agent_idx, config)
 
-            drop_input!(state, agent_idx, config)
+            drop_friends!(state, agent_idx, config)
             if indegree(state[1], agent_idx) < config.network.m0
-                if config.simulation.addinput == "neighborsofneighbors"
-                    add_input_neighbors_of_neighbors!(state, agent_idx, post_list, config, config.network.new_follows)
-                elseif config.simulation.addinput == "random"
-                    add_input_random!(state, agent_idx, post_list, config, config.network.new_follows)
+                if config.simulation.addfriends == "neighborsofneighbors"
+                    add_friends_neighbors_of_neighbors!(state, agent_idx, post_list, config, config.network.new_follows)
+                elseif config.simulation.addfriends == "random"
+                    add_friends_random!(state, agent_idx, post_list, config, config.network.new_follows)
                 else
-                    add_input_neighbors_of_neighbors!(state, agent_idx, post_list, config, floor(Int,config.network.new_follows/2))
-                    add_input_random!(state, agent_idx, post_list, config, floor(Int,config.network.new_follows/2))
+                    add_friends_neighbors_of_neighbors!(state, agent_idx, post_list, config, floor(Int,config.network.new_follows/2))
+                    add_friends_random!(state, agent_idx, post_list, config, floor(Int,config.network.new_follows/2))
                 end
             end
-            publish_post!(state, post_list, agent_idx, tick_nr)
+            if indegree(state[1], agent_idx) < config.agent_props.min_friends_count
+                set_inactive!(state, agent_idx, post_list)
+                this_agent.inactive_ticks = -1
+            end
+
+            inclin_interact = deepcopy(this_agent.inclin_interact)
+            while inclin_interact > 0
+                if rand() < inclin_interact
+                    publish_post!(state, post_list, agent_idx, tick_nr)
+                end
+                inclin_interact -= 1.0
+            end
 
         elseif this_agent.active
             this_agent.inactive_ticks += 1
@@ -56,8 +68,7 @@ function simulate(
 
     graph = barabasi_albert(
                     config.network.agent_count,
-                    config.network.m0,
-                    config.network.new_follows)
+                    config.network.m0)
     init_state = (graph, create_agents(graph))
     state = deepcopy(init_state)
     post_list = Array{Post, 1}(undef, 0)
@@ -86,7 +97,7 @@ function simulate(
         rem_vertices!(current_network, [agent.id for agent in state[2] if !agent.active])
         if batch_desc == "result"
             print('\r')
-            print("Current Tick: $i, current AVG agents connection count::" * string(round(ne(current_network)/nv(current_network))) * ", max outdegree: " * string(maximum(outdegree(current_network))) * ", mean outdegree: " * string(mean(outdegree(current_network))) * ", current Posts: " * string(length(post_list)))
+            print("Current Tick: $i, current AVG agents connection count::" * string(round(mean(degree(current_network)))) * ", max degree: " * string(maximum(outdegree(current_network))) * ", current Posts: " * string(length([post for post in post_list if length(post.seen_by) > 0])))
         end
         append!(df, tick!(state, post_list, i, config))
         if i % ceil(config.simulation.ticks / 10) == 0
@@ -115,6 +126,8 @@ function simulate(
     rm(joinpath("tmp", batch_desc * "_tmpstate.jld2"))
 
     print("\n---\nFinished simulation run with the following specifications:\n $config\n---\n")
+
+    return config, (df, post_df, graph_list), state, init_state
 end
 
 # suppress output of include()

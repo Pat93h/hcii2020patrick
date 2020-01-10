@@ -1,6 +1,7 @@
 mutable struct Agent
     id::Int64
     opinion::Float64
+    inclin_interact::Float64
     perceiv_publ_opinion::Float64
     active::Bool
     inactive_ticks::Int16
@@ -12,10 +13,11 @@ mutable struct Agent
         if opinion < -1 || opinion > 1
             error("invalid opinion value")
         end
-        
+
         new(
             id,
             opinion,
+            generate_inclin_interact(),
             opinion,
             true,
             0,

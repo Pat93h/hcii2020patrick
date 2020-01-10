@@ -12,10 +12,10 @@ function publish_post!(
     elseif post_opinion < -1
         post_opinion = -1.0
     end
-    post = Post(post_opinion, length(outneighbors(graph, agent_idx)), agent_idx, tick_nr)
+    post = Post(post_opinion, degree(graph, agent_idx), agent_idx, tick_nr)
     push!(post_list, post)
-    # send post to each outneighbor
-    for neighbor in outneighbors(graph, agent_idx)
+    # send post to each neighbors
+    for neighbor in neighbors(graph, agent_idx)
         push!(agent_list[neighbor].feed, post)
     end
     return state, post_list

@@ -12,3 +12,12 @@ end
 
 # suppress output of include()
 ;
+
+function generate_inclin_interact(lambda=log(25))
+    # this function was adapted from:
+    # https://www.johndcook.com/julia_rng.html
+    if lambda <= 0.0
+        error("mean must be positive")
+    end
+    -(1 / lambda) * log(rand())
+end
