@@ -28,18 +28,18 @@ function cfg_ot(
     ;
     backfire::Float64=0.4,
     befriend::Float64=0.2,
-    unfriend::Float64=0.5
+    unfriend::Float64=0.6
 )
     return (
         backfire=backfire,
-        befriend=unfriend,
+        befriend=befriend,
         unfriend=unfriend
     )
 end
 
 function cfg_ag(
     ;
-    own_opinion_weight::Float64=0.95,
+    own_opinion_weight::Float64=0.90,
     unfriend_rate::Float64=0.05,
     min_friends_count::Int64=5
     )

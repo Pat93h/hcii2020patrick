@@ -15,7 +15,8 @@ function convert_results(;specificrun::String="")
                 CSV.write(joinpath("dataexchange", filename, "post_df" * ".csv"), data[2][2])
 
                 for i in 1:length(data[2][3])
-                        savegraph(joinpath("dataexchange", filename, "graph_$i.gml"), data[2][3][i], GraphIO.GML.GMLFormat())
+                        graphnr = lpad(string(i),ceil(Int, length(data[2][3])/10),"0")
+                        savegraph(joinpath("dataexchange", filename, "graph_$graphnr.gml"), data[2][3][i], GraphIO.GML.GMLFormat())
                 end
         else
 

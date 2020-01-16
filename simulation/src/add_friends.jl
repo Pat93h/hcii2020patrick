@@ -11,21 +11,34 @@ function add_friends_neighbors_of_neighbors!(
     friend_candidates = Int64[]
 
     for neighbor in neighbors(graph, agent_idx)
-        append!(friend_candidates, setdiff(neighbors(graph, neighbor), neighbors(graph, agent_idx)))
+        append!(
+            friend_candidates,
+            setdiff(
+                neighbors(graph, neighbor),
+                neighbors(graph, agent_idx),
+                agent_idx
+            )
+        )
+
     end
 
     shuffle!(friend_candidates)
     # order neighbors by frequency of occurence in input_candidates descending
-    friends_queue = first.(sort(collect(countmap(friend_candidates)), by=last, rev=true))
+    if length(friend_candidates) > 0
+        friends_queue = first.(
+            sort(collect(countmap(friend_candidates)), by=last, rev=true)
+        )
 
-    if (length(friends_queue) - config.network.new_follows) < 0
-        new_friends_count = length(friends_queue)
+        if (length(friends_queue) - config.network.new_follows) < 0
+            new_friends_count = length(friends_queue)
 
-    for _ in 1:new_friends_count
-        new_neighbor = popfirst!(friends_queue)
-        add_edge!(graph, new_neighbor, agent_idx)
+        for _ in 1:new_friends_count
+            new_neighbor = popfirst!(friends_queue)
+            add_edge!(graph, new_neighbor, agent_idx)
+            end
         end
     end
+
     return state
 end
 
@@ -36,14 +49,22 @@ function add_friends_random!(
     config::Config,
     new_friends_count::Int64
     )
+
     graph, agent_list = state
     this_agent = agent_list[agent_idx]
 
     friends_queue = Array{Tuple{Int64,Int64}, 1}()
-    not_neighbors = setdiff([1:(agent_idx - 1); (agent_idx + 1):nv(graph)], neighbors(graph, agent_idx))
+    not_neighbors = setdiff(
+        [1:(agent_idx - 1); (agent_idx + 1):nv(graph)], 
+        neighbors(graph, agent_idx)
+    )
+
         for candidate in not_neighbors
-            if abs(this_agent.opinion - agent_list[candidate].opinion) < config.opinion_threshs.befriend
-                push!(friends_queue, (candidate, degree(graph, candidate)))
+            if (
+                abs(this_agent.opinion - agent_list[candidate].opinion) 
+                < config.opinion_threshs.befriend
+            )
+                push!(friends_queue, (candidate, outdegree(graph, candidate)))
         end
     end
 

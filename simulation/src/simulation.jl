@@ -14,6 +14,28 @@ for script in readdir("src")
     end
 end
 
+mutable struct Simulation
+
+    config::Config
+    init_state::Any
+    final_state::Any
+    agent_log::DataFrame
+    post_log::Any
+    graph_list::Array{AbstractGraph}
+
+    function Simulation(config=Config())
+        new(
+            config,
+            (nothing, nothing),
+            (nothing, nothing),
+            DataFrame(),
+            DataFrame(),
+            Array{AbstractGraph, 1}(undef, 0)
+        )
+    end
+
+end
+
 function tick!(
     state::Tuple{AbstractGraph, AbstractArray}, post_list::AbstractArray,
     tick_nr::Int64, config::Config
@@ -61,20 +83,22 @@ function tick!(
     return log_network(state, tick_nr)
 end
 
-function simulate(
-    config::Config = Config();
-    batch_desc::String = "result"
+function run!(
+    simulation::Simulation=Simulation();
+    name::String = "result"
     )
 
-    graph = barabasi_albert(
-                    config.network.agent_count,
-                    config.network.m0)
-    init_state = (graph, create_agents(graph))
-    state = deepcopy(init_state)
-    post_list = Array{Post, 1}(undef, 0)
-    graph_list = Array{AbstractGraph, 1}([init_state[1]])
+    config = simulation.config
 
-    df = DataFrame(
+    graph = DiGraph(barabasi_albert(
+                    config.network.agent_count,
+                    config.network.m0))
+    simulation.init_state = (graph, create_agents(graph))
+    state = deepcopy(simulation.init_state)
+    post_log = Array{Post, 1}(undef, 0)
+    simulation.graph_list = Array{AbstractGraph, 1}([simulation.init_state[1]])
+
+    agent_log = DataFrame(
         TickNr = Int64[],
         AgentID = Int64[],
         Opinion = Float64[],
@@ -82,52 +106,86 @@ function simulate(
         InactiveTicks = Int64[],
         ActiveState = Bool[],
         Indegree = Int64[],
-        Outdegree = Int64[]
+        Outdegree = Int64[],
+        Centrality = Float64[],
+        CC = Float64[],
+        Component = Int64[]
     )
 
     if !in("tmp", readdir())
         mkdir("tmp")
     end
-    if batch_desc == "result"
+    if name == "result"
         print("Current Tick: 0")
     end
 
     for i in 1:config.simulation.ticks
         current_network = deepcopy(state[1])
         rem_vertices!(current_network, [agent.id for agent in state[2] if !agent.active])
-        if batch_desc == "result"
+        if name == "result"
             print('\r')
-            print("Current Tick: $i, current AVG agents connection count::" * string(round(mean(degree(current_network)))) * ", max degree: " * string(maximum(outdegree(current_network))) * ", current Posts: " * string(length([post for post in post_list if length(post.seen_by) > 0])))
+            print("Current Tick: $i, current AVG agents connection count::" * string(round(mean(degree(current_network)))) * ", max degree: " * string(maximum(outdegree(current_network))) * ", current Posts: " * string(length([post for post in post_log if length(post.seen_by) > 0])))
         end
-        append!(df, tick!(state, post_list, i, config))
+        append!(agent_log, tick!(state, post_log, i, config))
         if i % ceil(config.simulation.ticks / 10) == 0
-            if batch_desc != "result"
+            if name != "result"
                 print(".")
             end
-            push!(graph_list, current_network)
+            current_network = deepcopy(state[1])
+            rem_vertices!(
+                current_network,
+                [agent.id for agent in state[2] if !agent.active]
+            )
 
-            save(joinpath("tmp", batch_desc * "_tmpstate.jld2"), string(i), (string(config), (df, post_list, graph_list), state, init_state))
+            push!(simulation.graph_list, current_network)
+
+            simulation.final_state = state
+            simulation.agent_log = agent_log
+            simulation.post_log = post_log
+
+            save(joinpath("tmp", name * ".jld2"), string(i), simulation)
         end
-
     end
 
-    post_df = DataFrame(
-        Opinion = [p.opinion for p in post_list],
-        Weight = [p.weight for p in post_list],
-        Source_Agent = [p.source_agent for p in post_list],
-        Published_At = [p.published_at for p in post_list],
-        Seen = [p.seen_by for p in post_list]
+    simulation.final_state = state
+    simulation.agent_log = agent_log
+    simulation.post_log = DataFrame(
+        Opinion = [p.opinion for p in post_log],
+        Weight = [p.weight for p in post_log],
+        Source_Agent = [p.source_agent for p in post_log],
+        Published_At = [p.published_at for p in post_log],
+        Seen = [p.seen_by for p in post_log]
     )
 
     if !in("results", readdir())
         mkdir("results")
     end
-    save(joinpath("results", batch_desc * ".jld2"), batch_desc, (config, (df, post_df, graph_list), state, init_state))
-    rm(joinpath("tmp", batch_desc * "_tmpstate.jld2"))
+    save(joinpath("results", name * ".jld2"), name, simulation)
+    rm(joinpath("tmp", name * ".jld2"))
 
     print("\n---\nFinished simulation run with the following specifications:\n $config\n---\n")
 
-    return config, (df, post_df, graph_list), state, init_state
+    return simulation
+end
+
+function run_batch(
+    configlist::Array{Config, 1};
+    resume_at::Int64=1,
+    stop_at::Int64=0,
+    batch_desc::String = ""
+    )
+
+    if stop_at == 0
+        stop_at == length(configlist)
+    end
+
+    for i in resume_at:stop_at
+        run_nr = lpad(string(i),length(string(length(configlist))),"0")
+        run!(
+            Simulation(configlist[i]),
+            name = (batch_name * "_run$run_nr")
+        )
+    end
 end
 
 # suppress output of include()

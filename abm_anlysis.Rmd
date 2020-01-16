@@ -23,16 +23,21 @@ library(gganimate)
 
 ```{r Data Import}
 
-simruns <- list.files(file.path("simulation", "dataexchange"))[2]
+simruns <- list.files(file.path("simulation", "dataexchange"))
 
-oldnewtest <- newtest_sim_df
+simruns[1]
 
-for (i in 1:length(simruns)) {
+str_pad("11", 2, pad = "0")
+as.character(22)
+
+simruns
+for (i in 1:9) {
   assign(paste0(simruns[i], "_sim_df"), read.csv(file.path("simulation", "dataexchange", simruns[i], "sim_df.csv")))
-  # assign(paste0(simruns[i], "_post_df"), read.csv(file.path("dataexchange", simruns[i], "post_df.csv")))
-  # for (j in 0:10) {
-  #   assign(paste0(simruns[i], "_graph_", j), read_graph(file.path("dataexchange", simruns[i], paste0("graph_", j+1, ".gml")), format = "gml"))
-  # }
+  assign(paste0(simruns[i], "_post_df"), read.csv(file.path("simulation","dataexchange", simruns[i], "post_df.csv")))
+  for (j in 0:10) {
+     assign(paste0(simruns[i], "_graph_", str_pad(as.character(j), 2, pad = "0")), 
+            read_graph(file.path("simulation","dataexchange", simruns[i], paste0("graph_", str_pad(as.character(j+1), 2, pad = "0"), ".gml")), format = "gml"))
+  }
     
 }
 
@@ -46,7 +51,12 @@ for (i in 1:length(simruns)) {
 
 ```{r}
 
-head(data)
+mean_degrees <- integer(length=20)
+
+for (i in 1:20) {
+  
+}
+  
 
 ```
 
@@ -160,7 +170,7 @@ viewpoint <- matrix(c(0.581680357,	-0.813347518,	-0.010670132,	27.88446792,
 
 # Build Array of Histograms
 
-for (runname in simruns){
+for (runname in simruns[1:9]){
   
   df <- get(paste0(runname, "_sim_df"))
   
@@ -171,16 +181,13 @@ for (runname in simruns){
 
   for (i in 1:max(df$TickNr)){
     
-    if (i %% ceiling(max(df$TickNr) / 10) == 0 ) cat(paste0(round(i / max(df$TickNr) * 100), '% completed'))
+    if (i %% ceiling(max(df$TickNr) / 10) == 0 ) cat(paste0(round(i / max(df$TickNr) * 100), '% --- '))
     df %>%
         filter(.$TickNr == i, .$ActiveState == "true") %>%
         .[,3] %>%
         round(digits=1) %>%
         table() %>%
         bind_rows(histarray,.) -> histarray
-    
-    if (i %% ceiling(max(df$TickNr) / 10) == 9 & i == max(df$TickNr)) cat(': Done')
-    else cat('\014')
   }
   
   histarray[is.na(histarray)] <- 0
@@ -210,7 +217,7 @@ for (runname in simruns){
   grid3d(side="z--", col="white", lwd=2)
   axis3d('x--', at = seq(0,floor(max(df$TickNr)/200)*200, by=200))
   axis3d('y--')
-  axis3d('z-+', at = seq(0,floor(max(histarraymatrix)/500)*500, by=500))
+  axis3d('z-+', at = seq(0,floor(max(histarraymatrix)/50)*50, by=50))
   mtext3d("Simulation Step", "x--", line=2)
   mtext3d("Opinion", "y--", line=2)
   mtext3d("Agent Count", "z-+", line=2)
@@ -224,41 +231,57 @@ for (runname in simruns){
 
 
 ```{r}
-xmasbatch_testrun1.1_sim_df %>% 
-  filter(TickNr == 700 & ActiveState == "true" ) -> testdf
 
-ggplot(data = testdf, aes(x=Outdegree)) +
-  geom_histogram(bins = 100)
+data <- data.frame(MeanDegree = double(), Centrality = double(), Transitivity = double())
+data
+get(paste0(simruns[1], "_sim_df")) %>% 
+  cbind(Run = simruns[1]) %>% 
+  group_by(Run, TickNr) %>% 
+  summarise(AVG_Indegree = sd(Indegree), AVG_Outdegree=sd(Outdegree)) %>% 
+  ggplot(aes(x=TickNr)) +
+  geom_line(aes(y=AVG_Indegree), color = "red") +
+  geom_line(aes(y=AVG_Outdegree))
+  bind_rows(data, .) -> data
+  
+  mean(closeness(cur_graph))
+  membership(cur_graph)
 
-theme_set(theme_bw())
+  plot(cur_graph)
+  cur_graph <- get(paste0("BA_run", str_pad(as.character(4), 2, pad = "0"), "_graph_", str_pad(as.character(10), 2, pad = "0")))
+  
+  rbind(data, data.frame(MeanDegree = mean(degree(cur_graph)), Centrality = mean(closeness(cur_graph)), Transitivity = transitivity(cur_graph)))
+  
+BA_run09_graph_02 %>% 
+  transitivity()
+  degree(mode="out") %>% 
+  sd()
+  
+mean(degree(BA_run01_graph_10))  
 
-xmasbatch_testrun1.1_sim_df %>% 
-  select(TickNr, Opinion, Indegree) %>% 
-  filter(TickNr < 10) %>% 
-  ggplot(aes(x=Opinion, y=Indegree)) + 
-  geom_point(show.legend = FALSE, alpha = 0.7) -> p
-  p + transition_states(TickNr, transition_length = 2, state_length = 1) -> anim
-p
-anim_save(animation = anim)
+rbind(data, c(simrun[1], i, ))
 
-anim
+for (i in 1:1) {
+  
+  for (j in 0:10) {
+    thisgraph <- get(paste0("BA_run", str_pad(as.character(i), 2, pad = "0"), "_graph_", str_pad(as.character(j), 2, pad = "0")))
+    result <- c(max(degree(thisgraph, mode = "in")), max(degree(thisgraph, mode = "out")))
+      
+  }
+}
 
-testdf %>% 
-  filter(Outdegree > 200) %>% 
-  count()
+data.frame()
 
-testdf %>% 
-  filter(Outdegree <= 20) %>% 
-  count()
+bigbarabasidigraph_sim_df %>% 
+  filter(TickNr == 200, ActiveState == "true") %>% 
+  select(PerceivPublOpinion ,Opinion , Indegree) %>% 
+  ggplot(aes(x=abs(Opinion - PerceivPublOpinion), y=Indegree)) +
+  geom_point()
 
-newtry_run1_sim_df %>% 
-  filter(TickNr == 1) %>% 
-  filter(Opinion == -1) %>% 
-  count()
+plot(bigbarabasidigraph_graph_10)
 
-result_sim_df %>% 
-  filter(Outdegree > 300) %>% 
-  .[,c(1,2,3,9, 10, 11)]
+bigbarabasidigraph_graph_10 %>% 
+  diameter() %>% 
+  mean()
   
 ```
 
