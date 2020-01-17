@@ -52,12 +52,24 @@ function tick!(
             drop_friends!(state, agent_idx, config)
             if indegree(state[1], agent_idx) < config.network.m0
                 if config.simulation.addfriends == "neighborsofneighbors"
-                    add_friends_neighbors_of_neighbors!(state, agent_idx, post_list, config, config.network.new_follows)
+                    add_friends_neighbors_of_neighbors!(
+                        state, agent_idx, post_list,
+                        config, config.network.new_follows
+                    )
                 elseif config.simulation.addfriends == "random"
-                    add_friends_random!(state, agent_idx, post_list, config, config.network.new_follows)
+                    add_friends_random!(
+                        state, agent_idx, post_list,
+                        config, config.network.new_follows
+                    )
                 else
-                    add_friends_neighbors_of_neighbors!(state, agent_idx, post_list, config, floor(Int,config.network.new_follows/2))
-                    add_friends_random!(state, agent_idx, post_list, config, floor(Int,config.network.new_follows/2))
+                    add_friends_neighbors_of_neighbors!(
+                        state, agent_idx, post_list,
+                        config, floor(Int,config.network.new_follows/2)
+                    )
+                    add_friends_random!(
+                        state, agent_idx, post_list,
+                        config, floor(Int,config.network.new_follows/2)
+                    )
                 end
             end
             if indegree(state[1], agent_idx) < config.agent_props.min_friends_count
@@ -172,7 +184,7 @@ function run_batch(
     configlist::Array{Config, 1};
     resume_at::Int64=1,
     stop_at::Int64=0,
-    batch_desc::String = ""
+    batch_name::String = ""
     )
 
     if stop_at == 0
