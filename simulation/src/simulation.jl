@@ -70,10 +70,6 @@ function tick!(
                 )
             end
         end
-        if indegree(state[1], agent_idx) < config.agent_props.min_friends_count
-            set_inactive!(state, agent_idx, post_list)
-            this_agent.inactive_ticks = -1
-        end
 
         inclin_interact = deepcopy(this_agent.inclin_interact)
         while inclin_interact > 0
