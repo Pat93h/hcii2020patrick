@@ -1,11 +1,11 @@
 import ParserCombinator
 
-function convert_results(;specificrun::String="")
+function convert_results(;specific_run::String="")
 
-    if specificrun != ""
+    if specific_run != ""
         raw_data = load(joinpath("results", specific_run))
         data = raw_data[first(keys(raw_data))]
-        filename = specificrun[1:first(findfirst(".jld2", specificrun))-1]
+        filename = specific_run[1:first(findfirst(".jld2", specific_run))-1]
 
         if !in(filename, readdir("dataexchange"))
                 mkdir(joinpath("dataexchange", filename))

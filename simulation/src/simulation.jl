@@ -43,53 +43,44 @@ function tick!(
     agent_list = state[2]
     for agent_idx in shuffle(1:length(agent_list))
         this_agent = agent_list[agent_idx]
-        if this_agent.active
-            this_agent.inactive_ticks = 0
-            update_feed!(state, agent_idx, config)
-            update_perceiv_publ_opinion!(state, agent_idx)
-            update_opinion!(state, agent_idx, config)
+        update_feed!(state, agent_idx, config)
+        update_perceiv_publ_opinion!(state, agent_idx)
+        update_opinion!(state, agent_idx, config)
 
-            drop_friends!(state, agent_idx, config)
-            if indegree(state[1], agent_idx) < config.network.m0
-                if config.simulation.addfriends == "neighborsofneighbors"
-                    add_friends_neighbors_of_neighbors!(
-                        state, agent_idx, post_list,
-                        config, config.network.new_follows
-                    )
-                elseif config.simulation.addfriends == "random"
-                    add_friends_random!(
-                        state, agent_idx, post_list,
-                        config, config.network.new_follows
-                    )
-                else
-                    add_friends_neighbors_of_neighbors!(
-                        state, agent_idx, post_list,
-                        config, floor(Int,config.network.new_follows/2)
-                    )
-                    add_friends_random!(
-                        state, agent_idx, post_list,
-                        config, floor(Int,config.network.new_follows/2)
-                    )
-                end
+        drop_friends!(state, agent_idx, config)
+        if indegree(state[1], agent_idx) < config.network.m0
+            if config.simulation.addfriends == "neighborsofneighbors"
+                add_friends_neighbors_of_neighbors!(
+                    state, agent_idx, post_list,
+                    config, config.network.new_follows
+                )
+            elseif config.simulation.addfriends == "random"
+                add_friends_random!(
+                    state, agent_idx, post_list,
+                    config, config.network.new_follows
+                )
+            else
+                add_friends_neighbors_of_neighbors!(
+                    state, agent_idx, post_list,
+                    config, floor(Int,config.network.new_follows/2)
+                )
+                add_friends_random!(
+                    state, agent_idx, post_list,
+                    config, floor(Int,config.network.new_follows/2)
+                )
             end
-            if indegree(state[1], agent_idx) < config.agent_props.min_friends_count
-                set_inactive!(state, agent_idx, post_list)
-                this_agent.inactive_ticks = -1
-            end
+        end
+        if indegree(state[1], agent_idx) < config.agent_props.min_friends_count
+            set_inactive!(state, agent_idx, post_list)
+            this_agent.inactive_ticks = -1
+        end
 
-            inclin_interact = deepcopy(this_agent.inclin_interact)
-            while inclin_interact > 0
-                if rand() < inclin_interact
-                    publish_post!(state, post_list, agent_idx, tick_nr)
-                end
-                inclin_interact -= 1.0
+        inclin_interact = deepcopy(this_agent.inclin_interact)
+        while inclin_interact > 0
+            if rand() < inclin_interact
+                publish_post!(state, post_list, agent_idx, tick_nr)
             end
-
-        elseif this_agent.active
-            this_agent.inactive_ticks += 1
-            if this_agent.inactive_ticks > 2
-                set_inactive!(state, agent_idx, post_list)
-            end
+            inclin_interact -= 1.0
         end
     end
     return log_network(state, tick_nr)
@@ -115,8 +106,6 @@ function run!(
         AgentID = Int64[],
         Opinion = Float64[],
         PerceivPublOpinion = Float64[],
-        InactiveTicks = Int64[],
-        ActiveState = Bool[],
         Indegree = Int64[],
         Outdegree = Int64[],
         Centrality = Float64[],
@@ -132,24 +121,18 @@ function run!(
     end
 
     for i in 1:config.simulation.ticks
-        current_network = deepcopy(state[1])
-        rem_vertices!(current_network, [agent.id for agent in state[2] if !agent.active])
+
         if name == "result"
             print('\r')
-            print("Current Tick: $i, current AVG agents connection count::" * string(round(mean(degree(current_network)))) * ", max degree: " * string(maximum(outdegree(current_network))) * ", current Posts: " * string(length([post for post in post_log if length(post.seen_by) > 0])))
+            print("Current Tick: $i, current AVG agents connection count::" * string(round(mean(degree(state[1])))) * ", max outdegree: " * string(maximum(outdegree(state[1]))) * ", current Posts: " * string(length([post for post in post_log if length(post.seen_by) > 0])))
         end
         append!(agent_log, tick!(state, post_log, i, config))
         if i % ceil(config.simulation.ticks / 10) == 0
             if name != "result"
                 print(".")
             end
-            current_network = deepcopy(state[1])
-            rem_vertices!(
-                current_network,
-                [agent.id for agent in state[2] if !agent.active]
-            )
 
-            push!(simulation.graph_list, current_network)
+            push!(simulation.graph_list, state[1])
 
             simulation.final_state = state
             simulation.agent_log = agent_log
@@ -183,13 +166,9 @@ end
 function run_batch(
     configlist::Array{Config, 1};
     resume_at::Int64=1,
-    stop_at::Int64=0,
+    stop_at::Int64=length(configlist),
     batch_name::String = ""
     )
-
-    if stop_at == 0
-        stop_at == length(configlist)
-    end
 
     for i in resume_at:stop_at
         run_nr = lpad(string(i),length(string(length(configlist))),"0")

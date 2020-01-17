@@ -3,7 +3,6 @@ mutable struct Agent
     opinion::Float64
     inclin_interact::Float64
     perceiv_publ_opinion::Float64
-    active::Bool
     inactive_ticks::Int16
     feed::Array{Post, 1}
     function Agent(id, opinion)
@@ -17,7 +16,6 @@ mutable struct Agent
             opinion,
             generate_inclin_interact(),
             opinion,
-            true,
             0,
             Array{Post, 1}(undef, 0)
         )

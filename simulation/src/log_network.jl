@@ -4,8 +4,6 @@ function log_network(
     graph, agent_list = state
     agent_opinion = [a.opinion for a in agent_list]
     agent_perceiv_publ_opinion = [a.perceiv_publ_opinion for a in agent_list]
-    agent_inactive_ticks = [a.inactive_ticks for a in agent_list]
-    agent_active_state = [a.active for a in agent_list]
     agent_indegree = indegree(graph)
     agent_outdegree = outdegree(graph)
     agent_centrality = closeness_centrality(graph)
@@ -20,8 +18,6 @@ function log_network(
         AgentID = 1:length(agent_list),
         Opinion = agent_opinion,
         PerceivPublOpinion = agent_perceiv_publ_opinion,
-        InactiveTicks = agent_inactive_ticks,
-        ActiveState = agent_active_state,
         Indegree = agent_indegree,
         Outdegree = agent_outdegree,
         Centrality = agent_centrality,
