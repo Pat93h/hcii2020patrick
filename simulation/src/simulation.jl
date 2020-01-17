@@ -128,7 +128,7 @@ function run!(
                 print(".")
             end
 
-            push!(simulation.graph_list, state[1])
+            push!(simulation.graph_list, deepcopy(state[1]))
 
             simulation.final_state = state
             simulation.agent_log = agent_log
