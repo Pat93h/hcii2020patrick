@@ -23,38 +23,154 @@ library(gganimate)
 
 ```{r Data Import}
 
+results <- load("simulation/results.Rda")
+
 simruns <- list.files(file.path("simulation", "dataexchange"))
 
-simruns[1]
 
-str_pad("11", 2, pad = "0")
-as.character(22)
-
-simruns
-for (i in 1:9) {
-  assign(paste0(simruns[i], "_sim_df"), read.csv(file.path("simulation", "dataexchange", simruns[i], "sim_df.csv")))
-  assign(paste0(simruns[i], "_post_df"), read.csv(file.path("simulation","dataexchange", simruns[i], "post_df.csv")))
-  for (j in 0:10) {
-     assign(paste0(simruns[i], "_graph_", str_pad(as.character(j), 2, pad = "0")), 
-            read_graph(file.path("simulation","dataexchange", simruns[i], paste0("graph_", str_pad(as.character(j+1), 2, pad = "0"), ".gml")), format = "gml"))
-  }
+for (i in 15:length(simruns)) {
+  assign(paste0(simruns[i], "_agent_log"), read.csv(file.path("simulation", "dataexchange", simruns[i], "agent_log.csv")))
+  assign(paste0(simruns[i], "_post_log"), read.csv(file.path("simulation","dataexchange", simruns[i], "post_log.csv")))
+  assign(paste0(simruns[i], "_graph_final"), 
+            read_graph(file.path("simulation","dataexchange", simruns[i], paste0("graph_10.gml")), format = "gml"))
+  
+  print(paste0("Run ", i, " complete"))
     
 }
 
-# ggraph(feed_length_run1_graph_10) + geom_edge_link() + geom_node_point() + theme_graph()
+print("1" * "2")
+
+ggnet2(net = BAv2_run03_graph_10)
+as.network(BAv2_run01_graph_10)
+
+vertices(BAv2_run10_graph_final) %>% 
+  degree(BAv2_run10_graph_final, v = .)
+
+ceb <- cluster_edge_betweenness(BAv2_run10_graph_final, directed = TRUE)
+clp <- cluster_label_prop(BAv2_run01_graph_final)
+dendPlot(ceb, mode="hclust")
 
 
-# length(V(xmasbatchtest_run1_graph_10))/length(V(xmasbatchtest_run1_graph_0))
+modularity(ceb)
 
+V(BAv2_run01_graph_final)$label <- NA
+V(BAv2_run01_graph_final)$size <- degree(BAv2_run01_graph_final, mode="out") * 0.3
+  
+
+E(BAv2_run01_graph_final)$arrow.size <- 0.1
+
+# pdf(file = "myplot.pdf", 600, 600)
+png("my_plot.png", 3000, 3000)
+plot(clp, BAv2_run01_graph_final, layout = layout_with_fr)
+title("Test")
+dev.off()
+```
+
+```{r}
+BAv2_run06_agent_log %>% 
+  group_by(TickNr) %>% 
+  summarize(meanOutdegree = mean(Outdegree))
+  
+  filter(TickNr == 1000) %>% 
+  select(Component) %>% 
+  max()
+  round(digits = 1) %>% 
+  +1 %>% 
+  "*"(10)
+
+nodecolorgrad <- colorRampPalette(c("green", "yellow", "red"))
+length(seq(-1,1, by=0.1))
+nodecolors <- nodegolorgrad
+
+deg <- degree(BAv2_run01_graph_10, mode="out")
+V(BAv2_run01_graph_10)$size <- deg
+V(BAv2_run01_graph_10)$size <- 8
+V(BAv2_run01_graph_10)$frame.color <- "white"
+V(BAv2_run01_graph_10)$color <- "orange"
+V(BAv2_run01_graph_10)$label <- "" 
+E(BAv2_run01_graph_10)$arrow.size <- .2
+plot(BAv2_run01_graph_10, layout=layout_with_drl)
+
+library(GGally)
+library(network)
+library(sna)
+
+net = read.graph(file.path("simulation","dataexchange","BAv2_run10", "graph_10.gml"))
+
+ggnet2(net = BAv2_run10_graph_10)
 
 ```
 
 ```{r}
 
-mean_degrees <- integer(length=20)
+BAv2_run06_agent_log %>% 
+  group_by(TickNr) %>% 
+  summarise(MaxOutdegree = max(Outdegree)) %>%
+  left_join(BAv2_run06_agent_log, .) %>% 
+  filter(Outdegree == MaxOutdegree)
+  mutate(MaxOutdegree = max(Outdegree))
+  summarise(maxOutdegree = max(Outdegree))
+  filter(Outdegree == max(Outdegree)) -> biggesthubs
+  group_by(TickNr) %>% 
+  summarise(meandeg = mean(Outdegree), maxcomp = max(Component))
 
-for (i in 1:20) {
+histarraymatrix
+ncol(histarraymatrix)
+
+for (runname in simruns[26:28]){
   
+  df <- get(paste0(runname, "_agent_log"))
+  
+  seq(0,100, by=1) %>%
+    round(digits=1) %>%
+    table() -> histarray
+
+
+  for (i in 1:max(df$TickNr)){
+    
+    if (i %% ceiling(max(df$TickNr) / 10) == 0 ) cat(paste0(round(i / max(df$TickNr) * 100), '% --- '))
+    df %>%
+        filter(.$TickNr == i, .$ActiveState == "true") %>%
+        .[,7] %>%
+        round(digits=1) %>%
+        table() %>%
+        bind_rows(histarray,.) -> histarray
+  }
+  
+  histarray[is.na(histarray)] <- 0
+  histarray %>%
+      .[-1,] %>%
+      as.matrix() -> histarraymatrix
+  
+  assign(paste0(runname, "histarraymatrix_indegree"), histarraymatrix)
+  
+  # Build the 3D Histogram
+  persp3Drgl(
+      x=1:nrow(histarraymatrix), y = seq(0,100, by=1),
+          contour=FALSE, z = histarraymatrix,
+          box=FALSE, shade=0.1,
+          xlab="", ylab="", zlab="",
+          col=viridis(n=2000, direction = -1), colkey=FALSE, axes=FALSE
+      )
+  
+  
+  # Formatting the Output
+  view3d(userMatrix=viewpoint, zoom=0.6)
+  par3d(windowRect = c(405, 104, 1795, 984))
+  aspect3d(x=1.4,y=1.2,z=0.5)
+  bbox3d(color=c("#EEEEEE","#AAAAAA"), xlen = 0, ylen = 0, zlen = 0)
+  grid3d(side="x++", col="white", lwd=2)
+  grid3d(side="y++", col="white", lwd=2)
+  grid3d(side="z--", col="white", lwd=2)
+  axis3d('x--', at = seq(0,floor(max(df$TickNr)/200)*200, by=200))
+  axis3d('y--')
+  axis3d('z-+', at = seq(0,floor(max(histarraymatrix)/50)*50, by=50))
+  mtext3d("Simulation Step", "x--", line=2)
+  mtext3d("Opinion", "y--", line=2)
+  mtext3d("Agent Count", "z-+", line=2)
+  
+  snapshot3d(paste0("output_", runname, ".png"))
+  # rgl.close()
 }
   
 
@@ -170,9 +286,11 @@ viewpoint <- matrix(c(0.581680357,	-0.813347518,	-0.010670132,	27.88446792,
 
 # Build Array of Histograms
 
-for (runname in simruns[1:9]){
+maxdf$TickNr
+
+for (runname in simruns){
   
-  df <- get(paste0(runname, "_sim_df"))
+  df <- get(paste0(runname, "_agent_log"))
   
   seq(-1,1, by=0.1) %>%
     round(digits=1) %>%
@@ -183,7 +301,7 @@ for (runname in simruns[1:9]){
     
     if (i %% ceiling(max(df$TickNr) / 10) == 0 ) cat(paste0(round(i / max(df$TickNr) * 100), '% --- '))
     df %>%
-        filter(.$TickNr == i, .$ActiveState == "true") %>%
+        filter(.$TickNr == i) %>%
         .[,3] %>%
         round(digits=1) %>%
         table() %>%

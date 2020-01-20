@@ -175,5 +175,96 @@ function run_batch(
     end
 end
 
+function run_resume!(
+    path::String = "result"
+)
+
+    if !("tmp" in readdir())
+        mkdir("tmp")
+    elseif "tmp" in readdir() && path == "result"
+        path = joinpath("tmp", readdir("tmp")[1])
+    end
+
+    raw_data = load(path)
+
+    name = (
+        path[first(findlast("\\", path))+1:first(findfirst(".jld2", path))-1]
+    )
+
+
+    tick_nr = parse(Int, first(keys(raw_data))) + 1
+    simulation = collect(values(raw_data))[1]
+    config = simulation.config
+
+    println("Resumed Run: $name \n $config) \n ---")
+
+    for i in 1:Int((ticknr - 1) / config.simulation.ticks * 10)
+        print(".")
+    end
+
+    state = simulation.final_state
+    agent_log = simulation.agent_log
+    post_log = simulation.post_log
+
+    for i in tick_nr:config.simulation.ticks
+
+        if name == "result"
+            print('\r')
+            print(
+                "Current Tick: $i, current AVG agents connection count::"
+                * string(round(mean(degree(state[1])))) * ", max outdegree: "
+                * string(maximum(outdegree(state[1]))) * ", current Posts: "
+                * string(length(
+                    [post for post in post_log if length(post.seen_by) > 0])
+                )
+            )
+        end
+
+        append!(agent_log, tick!(state, post_log, i, config))
+
+        if i % ceil(config.simulation.ticks / 10) == 0
+            if name != "result"
+                print(".")
+            end
+
+            push!(simulation.graph_list, deepcopy(state[1]))
+
+            simulation.final_state = state
+            simulation.agent_log = agent_log
+            simulation.post_log = post_log
+
+            save(joinpath("tmp", name * ".jld2"), string(i), simulation)
+        end
+    end
+
+    simulation.final_state = state
+    simulation.agent_log = agent_log
+    simulation.post_log = DataFrame(
+        Opinion = [p.opinion for p in post_log],
+        Weight = [p.weight for p in post_log],
+        Source_Agent = [p.source_agent for p in post_log],
+        Published_At = [p.published_at for p in post_log],
+        Seen = [p.seen_by for p in post_log]
+    )
+
+    if !in("results", readdir())
+        mkdir("results")
+    end
+    save(joinpath("results", name * ".jld2"), name, simulation)
+    rm(joinpath("tmp", name * ".jld2"))
+
+    if length(readdir("tmp")) == 0
+        rm("tmp")
+    end
+
+    print(
+        "\n---\nFinished simulation run with the following specifications:\n
+        $(simulation.config)\n---\n"
+    )
+
+    return simulation
+
+end
+
 # suppress output of include()
 ;

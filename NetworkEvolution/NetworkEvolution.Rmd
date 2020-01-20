@@ -47,26 +47,38 @@ rmdtemplates::write_bib(pkgs)
 
 
 # Introduction
-In the past decade the evolution of the internet and social media platforms rised new forms of social networks that changed our interpersonal communication and the methods of information procurement considerably. It has become very easy to connect to existing friends online, look for new friends and exchange information with them. As the formation of an individual's opinion is based on all available resources it is important to understand how the information received in online social networks is embedded and how people behave in such networks. 
+In the past decade the evolution of the internet and social media platforms raised new forms of social networks that changed our interpersonal communication and the methods of information procurement considerably. It has become very easy to connect to existing friends online, look for new friends and exchange information with them for example using platforms like Facebook or Twitter. As the formation of an individual's opinion is based on all available resources it is important to understand how the information received in online social networks is embedded into the process of opinion formation and how people behave in such networks. 
 
 # Theory
-Existing research states that the vast availability of similar-minded people in online social networks leads us to enclose ourselves in so-called echo chambers and to disconnect from people who are too different from us. This leads us to reinforce our opinion solely through 
+Existing research states that the vast availability of similar-minded people in online social networks leads us to enclose ourselves in so-called echo chambers and to disconnect from people who are too different from us. This leads us to reinforce our opinion solely through finding others that think similar. If this reinforcement would continue, people would be separated into different camps quickly and would not be able to agree on each other anymore. As most people prefer to make compromises it is interesting to have a closer look on the thresholds which let them keep in touch with people who they don’t agree on and how a variation of these thresholds changes the overall picture. Therefore, we created an agent-based model that allows us to simulate the desired behaviors and to compare the resulting network structures.
 
-We wanted to simulate such behavior in an agent-based model to be able to understand the crucial factors in the dynamics of online social networks.
+To reproduce an online social network in a simulation we must rely on a network generator that is comparable to a real network. As social media platforms such as Facebook and Twitter are close to a scale-free network in their overall network structure and follow a powerlaw distribution, the Barabasi-Albert network generator is most suitable for generating a realistic network topology. Within a Barabasi-Albert network there exists a little amount of very well-connected hubs while most nodes have only few connections to others. The Barabasi-Albert generator provides several parameters like the initial network size, the number of new nodes that are added to an initial network and the number of edges which are created by the joining nodes to existing nodes using preferential attachment. This allows us to get the simulation close to a real social network structure.
+
+# Method
+We chose the programming language Julia to conduct our research. With the LightGraphs package, this language provides performant network simulation and the required network generators for our agent-based model. It is also possible to implement batch runs that are based on the same random seed so that the network evolution following different parameters can be analyzed subsequently.
+
+In our research, we focused on the variation of limited parameters for answering our research questions:
+
+-	Size of the network: How do network and opinion dynamics interplay with the size of a social network?
+-	Adding friends: What is the difference between randomly making friends in the network and choosing only from the friends of existing friends?
+-	Removing friends: How does the threshold for accepting opinion differences interfere with the overall opinion and network dynamics?
+The distribution of opinions throughout the agents was not varied, but uniformly distributed, because their variation would have blurred the effect of the examined parameters on the network evolution.
+
+To analyze the effect of our parameters, we chose different approaches of social network analysis and evaluated the resulting networks and their nodes regarding their degree, centrality, communality, diameter, and clustering coefficient.
 
 
-# First Section
-## A Subsection Sample
-Please note that the first paragraph of a section or subsection is
-not indented. The first paragraph that follows a table, figure,
-equation etc. does not need an indent, either.
+# Results
+Our simulation study comprised in total 18 simulation runs that show the impact and relationships of the varied factors on the network evolution and opinion dynamics.
 
-Subsequent paragraphs, however, are indented.
+## Final state
+What can be learned from the simulation state after 1000 steps? Which factors have significant direct/indirect influence on degree distribution, centrality of nodes, cluster coefficient, and opinion distribution?
 
-### Sample Heading (Third Level) 
-Only two levels of
-headings should be numbered. Lower level headings remain unnumbered;
-they are formatted as run-in headings.
+## Evolution Process
+How does the network change during the simulation? Split-ups into multi-components, how fast does it recover? Do hubs vary over time? What influence has the opinion distribution on the network?
+
+# Discussion
+Our research provides important insight for simulating online social networks. We were able to show that the examined parameters play an important role for modelling a realistic network. The Barabasi-Albert generator proved to be a solid basis for building such simulations. Nevertheless, it is important to compare it with other generators and to enrich simulations by including more functionality like adding and removing agents to the network and experimenting with different initial opinion distributions. We will continue our work on simulating opinion and network dynamics with Julia to be able to include more parameters and to enhance the accuracy of our simulations.
+
 
 #### Sample Heading (Fourth Level)
 The contribution should contain no more than four levels of

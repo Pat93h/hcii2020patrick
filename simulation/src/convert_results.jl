@@ -41,6 +41,11 @@ function convert_results(;specific_run::String="")
         end
 
         for file in readdir("results")
+
+            if !occursin("jld2", file)
+                continue
+            end
+
             raw_data = load(joinpath("results", file))
             data = raw_data[first(keys(raw_data))]
             filename = file[1:first(findfirst(".jld2", file))-1]
